@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スイカゲーム</title>
+    <style>
+        #gameContainer {
+            width: 200px;
+            height: 400px;
+            margin: 20px auto;
+            position: relative;
+            border: 1px solid #000;
+        }
+        .fruit {
+            width: 50px;
+            height: 50px;
+            position: absolute;
+            background-size: cover;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameContainer = document.getElementById('gameContainer');
+            let fruits = ['apple', 'banana', 'watermelon'];
+            let currentFruitIndex = 0;
+
+            function createFruit() {
+                const fruit = document.createElement('div');
+                fruit.classList.add('fruit');
+                fruit.style.backgroundImage = `url('${fruits[currentFruitIndex]}.png')`; // 果物の画像ファイルを用意してください
+                fruit.style.top = '0px';
+                fruit.style.left = `${Math.floor(Math.random() * (gameContainer.offsetWidth - 50))}px`; // ランダムな位置
+                gameContainer.appendChild(fruit);
+                dropFruit(fruit);
+            }
+
+            function dropFruit(fruit) {
+                let fruitPos = 0;
+                let fruitDropInterval = setInterval(() => {
+                    fruitPos += 5;
+                    fruit.style.top = `${fruitPos}px`;
+                    if (fruitPos >= gameContainer.offsetHeight - 50) {
+                        clearInterval(fruitDropInterval);
+                        combineFruits(fruit);
+                    }
+                }, 100);
+            }
+
+            function combineFruits(fruit) {
+                const allFruits = Array.from(document.querySelectorAll('.fruit'));
+                allFruits.forEach(f => {
+                    if (f !== fruit && f.style.left === fruit.style.left && Math.abs(parseInt(f.style.top) - parseInt(fruit.style.top)) < 50) {
+                        gameContainer.removeChild(f);
+                        gameContainer.removeChild(fruit);
+                        currentFruitIndex = (currentFruitIndex + 1) % fruits.length;
+                        createFruit();
+                    }
+                });
+            }
+
+            createFruit(); // ゲーム開始時に最初のフルーツを生成
+        });
+
+    </script>
+</body>
+</html>
