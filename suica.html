@@ -17,6 +17,7 @@
             height: 50px;
             position: absolute;
             background-size: cover;
+            background-repeat: no-repeat;
         }
     </style>
 </head>
@@ -26,45 +27,89 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const gameContainer = document.getElementById('gameContainer');
-            let fruits = ['apple', 'banana', 'watermelon'];
+            const gameWidth = gameContainer.clientWidth;
+            const fruitSize = 50; // フルーツのサイズ（50px x 50px）
+            let currentFruit = null;
+            let fruits = ['apple', 'banana', 'watermelon']; // 果物の種類
             let currentFruitIndex = 0;
+            let isFalling = false; // フルーツが落下中かどうかの状態
+            let gravity = 0.1; // 重力加速度
+            let velocity = 0; // 初期速度
 
             function createFruit() {
                 const fruit = document.createElement('div');
                 fruit.classList.add('fruit');
-                fruit.style.backgroundImage = `url('${fruits[currentFruitIndex]}.png')`; // 果物の画像ファイルを用意してください
+                fruit.style.backgroundImage = `url('${fruits[currentFruitIndex]}.png')`; // 画像ファイル名を設定してください
                 fruit.style.top = '0px';
-                fruit.style.left = `${Math.floor(Math.random() * (gameContainer.offsetWidth - 50))}px`; // ランダムな位置
+                fruit.style.left = `${(gameWidth / 2) - (fruitSize / 2)}px`; // 中央に配置
                 gameContainer.appendChild(fruit);
-                dropFruit(fruit);
+                currentFruit = fruit;
+                isFalling = false; // 新しいフルーツが落下していない状態で初期化
+                velocity = 0; // 落下速度をリセット
             }
 
-            function dropFruit(fruit) {
-                let fruitPos = 0;
-                let fruitDropInterval = setInterval(() => {
-                    fruitPos += 5;
-                    fruit.style.top = `${fruitPos}px`;
-                    if (fruitPos >= gameContainer.offsetHeight - 50) {
-                        clearInterval(fruitDropInterval);
-                        combineFruits(fruit);
+            function dropFruit() {
+                if (!currentFruit || isFalling) return;
+
+                isFalling = true; // 落下を開始
+                let fruitPos = parseInt(currentFruit.style.top, 10);
+                const dropInterval = setInterval(() => {
+                    velocity += gravity; // 速度を増加
+                    fruitPos += velocity; // 速度に応じて位置を更新
+                    if (fruitPos < gameContainer.clientHeight - fruitSize) {
+                        currentFruit.style.top = `${fruitPos}px`;
+                    } else {
+                        clearInterval(dropInterval);
+                        isFalling = false; // 落下終了
+                        combineFruits(); // フルーツを組み合わせる
+                        currentFruit = null;
+                        createFruit(); // 新しいフルーツを作成
                     }
-                }, 100);
+                }, 20); // タイマーの間隔を短くするとよりスムーズな落下が実現します
             }
 
-            function combineFruits(fruit) {
-                const allFruits = Array.from(document.querySelectorAll('.fruit'));
-                allFruits.forEach(f => {
-                    if (f !== fruit && f.style.left === fruit.style.left && Math.abs(parseInt(f.style.top) - parseInt(fruit.style.top)) < 50) {
-                        gameContainer.removeChild(f);
-                        gameContainer.removeChild(fruit);
-                        currentFruitIndex = (currentFruitIndex + 1) % fruits.length;
-                        createFruit();
+
+            function combineFruits() {
+                const allFruits = Array.from(gameContainer.querySelectorAll('.fruit'));
+                allFruits.forEach(fruit => {
+                    if (fruit !== currentFruit) {
+                        const fruitRect = fruit.getBoundingClientRect();
+                        const currentFruitRect = currentFruit.getBoundingClientRect();
+                        // 現在のフルーツと他のフルーツの距離をチェック
+                        if (fruitRect.x === currentFruitRect.x && Math.abs(fruitRect.y - currentFruitRect.y) < fruitSize) {
+                            gameContainer.removeChild(fruit);
+                            currentFruitIndex = (currentFruitIndex + 1) % fruits.length;
+                            currentFruit.style.backgroundImage = `url('${fruits[currentFruitIndex]}.png')`;
+                        }
                     }
                 });
             }
 
+            document.addEventListener('keydown', (e) => {
+                if (!currentFruit || isFalling) return;
+
+                const left = parseInt(currentFruit.style.left, 10);
+                switch (e.key) {
+                    case 'ArrowLeft': // 左矢印キー
+                        if (left > 0) {
+                            currentFruit.style.left = `${Math.max(left - fruitSize, 0)}px`;
+                        }
+                        break;
+                    case 'ArrowRight': // 右矢印キー
+                        if (left < (gameWidth - fruitSize)) {
+                            currentFruit.style.left = `${Math.min(left + fruitSize, gameWidth - fruitSize)}px`;
+                        }
+                        break;
+                    case 'ArrowDown': // 下矢印キーでフルーツを落とす
+                        dropFruit();
+                        break;
+                }
+            });
+
             createFruit(); // ゲーム開始時に最初のフルーツを生成
         });
+
+
 
     </script>
 </body>
